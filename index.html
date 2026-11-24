@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mold Die Inventory System</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+:root{
+  --bg:#f3f5f9;--card:#fff;--ink:#0f1b2d;--ink2:#51607a;--ink3:#8592a8;--line:#e2e7f0;
+  --brand:#0f3a6d;--brand2:#1d5fb8;--accent:#2563eb;--accent-soft:#e8f0fe;
+  --ok:#0e9f6e;--ok-soft:#e3f6ee;--warn:#c76a00;--warn-soft:#fff3df;--bad:#d92d20;--bad-soft:#fdecea;
+  --shadow:0 1px 2px rgba(15,27,45,.06),0 6px 20px rgba(15,27,45,.06);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+body{font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5;background:var(--bg);color:var(--ink);min-height:100vh}
+button{font-family:inherit;cursor:pointer}
+.mono{font-family:'JetBrains Mono',monospace}
+.muted{color:var(--ink3);font-size:12px}
+
+/* LOGIN */
+#login{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:radial-gradient(1200px 600px at 20% -10%,#1d5fb8 0,transparent 60%),linear-gradient(160deg,#0a2447,#0f3a6d 60%,#12447f)}
+.login-card{background:#fff;border-radius:18px;padding:38px 36px 30px;width:100%;max-width:410px;box-shadow:0 30px 80px rgba(0,0,0,.35)}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.logo-mark{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:grid;place-items:center;color:#fff;font-size:22px}
+.login-title{font-size:20px;font-weight:700;color:var(--brand);line-height:1.2}
+.login-sub{font-size:12px;color:var(--ink3);margin-bottom:24px;margin-left:56px;margin-top:-2px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--bg);padding:4px;border-radius:10px;margin-bottom:20px}
+.seg button{border:0;background:transparent;padding:9px;border-radius:8px;font-weight:600;font-size:13px;color:var(--ink2)}
+.seg button.on{background:#fff;color:var(--brand);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--ink2);margin-bottom:5px}
+.in{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font:inherit;outline:none;transition:.15s}
+.in:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.13)}
+.btn-login{width:100%;padding:12px;border:0;border-radius:10px;background:var(--brand);color:#fff;font-weight:600;font-size:14px;transition:.15s}
+.btn-login:hover{background:var(--brand2)}
+.login-err{min-height:20px;font-size:12px;color:var(--bad);text-align:center;margin-bottom:8px}
+.login-note{background:var(--accent-soft);color:var(--brand);border-radius:8px;padding:11px 13px;font-size:12.5px;margin-bottom:16px}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:60;background:var(--brand);color:#fff;display:flex;align-items:center;gap:20px;padding:0 24px;height:58px;box-shadow:0 2px 12px rgba(0,0,0,.18)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;white-space:nowrap}
+.brand .logo-mark{width:32px;height:32px;font-size:16px;border-radius:9px;background:rgba(255,255,255,.14)}
+.nav{display:flex;gap:4px;margin-left:8px}
+.nav button{border:0;background:transparent;color:rgba(255,255,255,.72);padding:8px 16px;border-radius:8px;font-weight:500;font-size:13.5px}
+.nav button:hover{color:#fff;background:rgba(255,255,255,.08)}
+.nav button.on{background:rgba(255,255,255,.16);color:#fff}
+.user{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:13px}
+.role{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.role.admin{background:#ffd27a;color:#6b4200}.role.viewer{background:rgba(255,255,255,.18);color:#fff}
+.logout{border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;padding:5px 12px;border-radius:7px;font-size:12px}
+.logout:hover{background:rgba(255,255,255,.12)}
+
+.syncbar{display:flex;align-items:center;gap:10px;padding:7px 24px;background:#fff;border-bottom:1px solid var(--line);font-size:12px;color:var(--ink2)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ink3);flex-shrink:0}
+.dot.ok{background:var(--ok);box-shadow:0 0 0 3px rgba(14,159,110,.18)}.dot.warn{background:#f59e0b}.dot.err{background:var(--bad)}
+.syncbar .sp{margin-left:auto;display:flex;gap:8px}
+
+main{padding:24px;max-width:1500px;margin:0 auto}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.page-head h1{font-size:22px;font-weight:700;letter-spacing:-.2px}
+.page-head p{color:var(--ink2);font-size:13px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:13px;font-weight:600;transition:.15s;white-space:nowrap}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}.btn.primary:hover{background:#1d4ed8;color:#fff}
+.btn.danger{color:var(--bad);border-color:#f3c2be}.btn.danger:hover{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn.xs{padding:3px 8px;font-size:11.5px;border-radius:6px}
+.btn.ghost-w{background:transparent;color:var(--ink2)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;text-align:left;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:.18s;display:block;width:100%}
+.stat:hover{transform:translateY(-2px);border-color:var(--accent)}
+.stat::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
+.stat .ic{position:absolute;right:16px;top:14px;font-size:22px;opacity:.9}
+.stat .lb{font-size:11px;font-weight:700;color:var(--ink2);letter-spacing:.6px;text-transform:uppercase}
+.stat .vl{font-size:34px;font-weight:700;line-height:1.15;margin:6px 0 2px;color:var(--c)}
+.stat .sb{font-size:12px;color:var(--ink3)}
+.stat .go{font-size:11.5px;color:var(--accent);font-weight:600;margin-top:8px}
+.s-blue{--c:#2563eb}.s-green{--c:#0e9f6e}.s-purple{--c:#7c3aed}.s-red{--c:#d92d20}
+
+/* FILTER BAR */
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.search{position:relative;flex:1;min-width:240px}
+.search span{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;opacity:.6}
+.search .in{padding-left:34px}
+.filters select.in{width:auto;min-width:160px}
+
+/* PACKAGES */
+.pkg{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:14px;box-shadow:var(--shadow);overflow:hidden}
+.pkg-h{display:flex;align-items:center;gap:14px;padding:14px 18px;cursor:pointer;user-select:none}
+.pkg-h:hover{background:#fafbfe}
+.chev{color:var(--ink3);transition:.2s;font-size:11px;width:14px}
+.pkg.open .chev{transform:rotate(90deg)}
+.pkg-name{font-size:16px;font-weight:700;color:var(--brand)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.chip{font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--bg);color:var(--ink2);border:1px solid var(--line)}
+.chip.blue{background:var(--accent-soft);color:var(--accent);border-color:#cfdcfa}
+.chip.red{background:var(--bad-soft);color:var(--bad);border-color:#f6c9c5}
+.pkg-b{display:none;border-top:1px solid var(--line);padding:16px;background:#fafbfd}
+.pkg.open .pkg-b{display:block}
+.subs{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.sub{background:#fff;border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.sub-h{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--accent-soft);border-bottom:1px solid #d5e2fb}
+.sub-name{font-weight:700;font-size:12.5px;letter-spacing:.4px;color:var(--brand)}
+.sub-tot{font-size:12px;font-weight:600;color:var(--brand2);font-family:'JetBrains Mono',monospace}
+table.t{width:100%;border-collapse:collapse}
+.t th{padding:8px 14px;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);text-align:left;font-weight:600;border-bottom:1px solid var(--line);background:#fff}
+.t td{padding:9px 14px;border-bottom:1px solid #eef1f6;font-size:13px;vertical-align:middle}
+.t tr:last-child td{border-bottom:0}
+.t .r{text-align:right}
+.t .pn{font-family:'JetBrains Mono',monospace;font-weight:500;font-size:12.5px}
+.t .rm{font-size:11.5px;color:var(--ink3)}
+.t tr.lowrow td{background:#fffaf2}
+.qty{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.b-ok{background:var(--ok-soft);color:var(--ok)}.b-low{background:var(--warn-soft);color:var(--warn)}.b-out{background:var(--bad-soft);color:var(--bad)}
+.empty{padding:30px;text-align:center;color:var(--ink3);font-size:13px}
+.noparts{padding:16px;text-align:center;color:var(--ink3);font-size:12.5px}
+
+/* ADMIN */
+.admin-grid{display:grid;grid-template-columns:270px 1fr;gap:18px;align-items:start}
+.side{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;position:sticky;top:130px}
+.side-h{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.side-list{max-height:calc(100vh - 260px);overflow:auto}
+.side-item{display:block;width:100%;text-align:left;border:0;background:transparent;padding:11px 16px;border-bottom:1px solid #eef1f6}
+.side-item:hover{background:#fafbfe}
+.side-item.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.side-item b{display:block;font-size:13.5px;color:var(--ink)}
+.side-item span{font-size:11.5px;color:var(--ink3)}
+.a-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow)}
+.a-head h2{font-size:19px;color:var(--brand)}
+.a-sub{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:14px;box-shadow:var(--shadow);overflow:hidden}
+.a-sub-h{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 16px;background:var(--accent-soft);border-bottom:1px solid #d5e2fb}
+.a-sub-h .n{font-weight:700;color:var(--brand);letter-spacing:.3px}
+.a-sub-h .tt{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--brand2);font-weight:600;margin-left:10px}
+.a-sub .in{padding:7px 10px;font-size:13px}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.stepper button{width:30px;height:32px;border:0;background:var(--bg);font-size:16px;font-weight:700;color:var(--ink2)}
+.stepper button:hover{background:var(--accent-soft);color:var(--accent)}
+.stepper input{width:58px;border:0;text-align:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;outline:none;height:32px;-moz-appearance:textfield}
+.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none}
+.hint{background:var(--accent-soft);color:var(--brand);border-radius:10px;padding:10px 14px;font-size:12.5px;margin-bottom:14px}
+.stk{display:flex;align-items:center;gap:8px}
+.stk .qty{min-width:36px;text-align:right;margin-right:4px;font-size:16px}
+.btn.use{color:var(--bad);border-color:#f3c2be;background:#fff5f4}
+.btn.use:hover{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.btn.recv{color:var(--ok);border-color:#b6e6d2;background:#f1fbf6}
+.btn.recv:hover{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.adj-prev{font-size:13px;margin-top:12px;padding:9px 12px;border-radius:8px;background:var(--bg);color:var(--ink2)}
+.adj-prev.ok{background:var(--ok-soft);color:var(--ok)}.adj-prev.low{background:var(--warn-soft);color:var(--warn)}.adj-prev.out{background:var(--bad-soft);color:var(--bad)}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(10,20,40,.55);backdrop-filter:blur(3px);z-index:400;display:none;align-items:center;justify-content:center;padding:20px}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:470px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.35)}
+.modal.wide{max-width:900px}
+.m-h{padding:18px 22px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.m-h h3{font-size:17px}
+.m-x{border:0;background:var(--bg);width:30px;height:30px;border-radius:8px;font-size:15px;color:var(--ink2)}
+.m-b{padding:18px 22px;overflow:auto}
+.m-f{padding:14px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.m-err{color:var(--bad);font-size:12.5px;min-height:18px;margin-top:4px}
+.chk{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
+.chk input{width:16px;height:16px}
+.clickrow{cursor:pointer}.clickrow:hover td{background:var(--accent-soft)}
+.okbig{text-align:center;padding:36px 10px;color:var(--ok);font-weight:600}
+
+#toast{position:fixed;top:76px;right:22px;z-index:600;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:500;opacity:0;transform:translateX(14px);transition:.25s;pointer-events:none;box-shadow:var(--shadow);background:#fff;border:1px solid var(--line)}
+#toast.show{opacity:1;transform:none}
+#toast.ok{border-color:#b6e6d2;color:var(--ok);background:var(--ok-soft)}
+#toast.err{border-color:#f6c9c5;color:var(--bad);background:var(--bad-soft)}
+#toast.info{border-color:#cfdcfa;color:var(--accent);background:var(--accent-soft)}
+
+#printArea{display:none}
+
+@media(max-width:1000px){
+  .stats{grid-template-columns:repeat(2,1fr)}.subs{grid-template-columns:1fr}
+  .admin-grid{grid-template-columns:1fr}.side{position:static}.side-list{max-height:220px}
+  .topbar{padding:0 14px;gap:10px}.brand span.t{display:none}main{padding:14px}
+}
+@media(max-width:560px){.stats{grid-template-columns:1fr 1fr}.stat .vl{font-size:26px}.chips{display:none}.syncbar{flex-wrap:wrap}}
+
+/* PRINT */
+@page{size:A4;margin:12mm}
+@media print{
+  body{background:#fff}
+  body>*:not(#printArea){display:none!important}
+  #printArea{display:block;color:#000;font-size:10.5pt}
+  #printArea h1{font-size:18pt;margin-bottom:2px}
+  #printArea .meta{color:#444;font-size:9.5pt;margin-bottom:12px;border-bottom:2px solid #0f3a6d;padding-bottom:8px}
+  #printArea h2{font-size:13pt;background:#0f3a6d;color:#fff;padding:5px 9px;margin:16px 0 8px;-webkit-print-color-adjust:exact;print-color-adjust:exact;break-after:avoid}
+  #printArea h3{font-size:10.5pt;margin:10px 0 4px;color:#0f3a6d;break-after:avoid}
+  #printArea table{width:100%;border-collapse:collapse;margin-bottom:6px;break-inside:auto}
+  #printArea th,#printArea td{border:1px solid #bbb;padding:3px 7px;text-align:left;font-size:9.5pt}
+  #printArea th{background:#e8eef7;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #printArea td.r,#printArea th.r{text-align:right}
+  #printArea tr{break-inside:avoid}
+  #printArea tr.low td{background:#fff1d6;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #printArea tr.out td{background:#fde0dd;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<!-- APP -->
+<div id="app">
+  <header class="topbar">
+    <div class="brand"><div class="logo-mark">⬡</div><span class="t">Mold Die Inventory</span></div>
+    <nav class="nav">
+      <button id="navInv" class="on" data-act="view" data-v="inv">📊 Inventory</button>
+      <button id="navAdmin" data-act="view" data-v="admin">⚙ Admin Panel</button>
+    </nav>
+  </header>
+  <div class="syncbar">
+    <span class="dot" id="syncDot"></span><span id="syncText" style="font-weight:500">Not connected</span>
+    <span class="muted" id="syncTime"></span>
+    <div class="sp">
+      <button class="btn sm" data-act="sync">↻ Refresh from Sheet</button>
+      <button class="btn sm primary" data-act="pushNow" id="pushBtn">⬆ Push to Sheet</button>
+    </div>
+  </div>
+
+  <!-- INVENTORY -->
+  <main id="viewInv">
+    <div class="page-head">
+      <div><h1>Stock Overview</h1><p id="updated"></p></div>
+      <div class="btn-row">
+        <button class="btn" data-act="print">🖨 Print / PDF</button>
+        <button class="btn" data-act="csv">⬇ CSV</button>
+        <button class="btn" data-act="xlsx">⬇ Excel</button>
+      </div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="filters">
+      <div class="search"><span>🔍</span><input class="in" id="q" placeholder="Search package, subcategory or drawing / part number…"></div>
+      <select class="in" id="fPkg"></select>
+      <select class="in" id="fStatus">
+        <option value="">All stock levels</option>
+        <option value="low">Low stock only (≤ 1)</option>
+        <option value="ok">In stock (&gt; 1)</option>
+      </select>
+      <button class="btn sm ghost-w" data-act="expandAll">Expand all</button>
+      <button class="btn sm ghost-w" data-act="collapseAll">Collapse all</button>
+    </div>
+    <div id="pkgs"></div>
+  </main>
+
+  <!-- ADMIN -->
+  <main id="viewAdmin" hidden>
+    <div class="page-head">
+      <div><h1>Admin Panel</h1><p>Add, edit or delete packages, subcategories and parts. Changes save automatically.</p></div>
+      <div class="btn-row"><button class="btn primary" data-act="addPkg">+ Add Package</button></div>
+    </div>
+    <div class="admin-grid">
+      <aside class="side">
+        <div class="side-h"><span>Packages</span><span class="muted" id="sideCount"></span></div>
+        <div class="side-list" id="sideList"></div>
+      </aside>
+      <section id="aMain"></section>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+<div id="toast"></div>
+<div id="printArea"></div>
+
+<script>
+/* ═══════════════ CONFIG ═══════════════ */
+// Google Apps Script Web App URL (see apps-script.gs). Leave as-is to keep the same URL after redeploying.
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbw1A90FecO7bSrZ0KCKR_gdAoUiek5dhpQaBrxFwoKaJ4StPKGKUce0MWP6-gcBiKRZ9A/exec';
+const DEFAULT_SUBS = ['TOP CAVITY BAR', 'BOTTOM CAVITY BAR', 'TOP CULL BLOCK', 'BOTTOM CULL BLOCK'];
+const LOW = 1;                      // stock <= LOW counts as low stock
+const LS_DB = 'moldDieInv_v1', LS_DIRTY = 'moldDieInv_dirty';
+
+/* ═══════════════ HELPERS ═══════════════ */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+const sum = a => a.reduce((s, x) => s + (Number(x.qty) || 0), 0);
+const sheetOn = () => !!SHEET_URL && !SHEET_URL.includes('YOUR_');
+const num = v => Math.max(0, parseInt(v, 10) || 0);
+const isLow = q => q <= LOW;
+const byName = (a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }); // A→Z package order
+const stamp = () => new Date().toLocaleString('en-SG', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+function badge(q) {
+  if (q <= 0) return '<span class="badge b-out">Out of stock</span>';
+  if (q <= LOW) return '<span class="badge b-low">Low stock</span>';
+  return '<span class="badge b-ok">In stock</span>';
+}
+function toast(msg, type = 'ok') {
+  const t = $('toast'); t.textContent = msg; t.className = 'show ' + type;
+  clearTimeout(t._t); t._t = setTimeout(() => t.className = '', 2800);
+}
+
+/* ═══════════════ DATA ═══════════════ */
+let DB = { packages: [], parts: [] };
+const pkgById = id => DB.packages.find(p => p.id === id);
+const partsOf = (pid, sid) => DB.parts.filter(x => x.pkg === pid && x.sub === sid);
+const partsInPkg = pid => DB.parts.filter(x => x.pkg === pid);
+
+function seed() {
+  const mk = name => ({ id: uid(), name, subs: DEFAULT_SUBS.map(n => ({ id: uid(), name: n })) });
+  const pk = [mk('S8/GN16 Cu'), mk('TO/DD'), mk('SOT/TSOT')];
+  const parts = [];
+  const add = (p, si, no, q, r = '') => parts.push({ id: uid(), pkg: p.id, sub: p.subs[si].id, partNo: no, qty: q, remark: r });
+  add(pk[0], 0, 'DWG-S8-TCB-001', 4); add(pk[0], 0, 'DWG-S8-TCB-002', 1, 'Rev B');
+  add(pk[0], 1, 'DWG-S8-BCB-001', 3); add(pk[0], 2, 'DWG-S8-TCL-001', 2); add(pk[0], 3, 'DWG-S8-BCL-001', 0, 'On order');
+  add(pk[1], 0, 'DWG-TO-TCB-101', 5); add(pk[1], 1, 'DWG-TO-BCB-101', 1); add(pk[1], 2, 'DWG-TO-TCL-101', 6); add(pk[1], 3, 'DWG-TO-BCL-101', 3);
+  add(pk[2], 0, 'DWG-SOT-TCB-201', 2); add(pk[2], 1, 'DWG-SOT-BCB-201', 4); add(pk[2], 3, 'DWG-SOT-BCL-201', 1);
+  return { packages: pk.sort(byName), parts };
+}
+function normalise(d) {
+  return {
+    packages: (d.packages || []).map(p => ({ id: String(p.id), name: String(p.name), subs: (p.subs || []).map(s => ({ id: String(s.id), name: String(s.name) })) })).sort(byName),
+    parts: (d.parts || []).map(x => ({ id: String(x.id), pkg: String(x.pkg), sub: String(x.sub), partNo: String(x.partNo ?? ''), qty: num(x.qty), remark: String(x.remark || '') }))
+  };
+}
+function loadLocal() {
+  try { const r = localStorage.getItem(LS_DB); if (r) { DB = normalise(JSON.parse(r)); return; } } catch (e) {}
+  DB = seed();
+}
+const saveLocal = () => { try { localStorage.setItem(LS_DB, JSON.stringify(DB)); } catch (e) {} };
+
+/* ═══════════════ GOOGLE SHEETS SYNC ═══════════════ */
+let ver = 0, pushing = false, pushTimer = null, lastSync = null;
+const isDirty = () => localStorage.getItem(LS_DIRTY) === '1';
+
+function setSync(state, text) {
+  $('syncDot').className = 'dot ' + state; $('syncText').textContent = text;
+  $('syncTime').textContent = lastSync ? '· Last sync ' + lastSync : '';
+}
+async function sheetGet(action) {
+  const res = await fetch(SHEET_URL + '?action=' + action, { redirect: 'follow' });
+  const txt = await res.text();
+  try { return JSON.parse(txt); } catch (e) { throw new Error('Bad response from script'); }
+}
+async function sheetPost(body) {
+  const res = await fetch(SHEET_URL, { method: 'POST', redirect: 'follow', body: JSON.stringify(body) });
+  const txt = await res.text();
+  try { return JSON.parse(txt); } catch (e) { throw new Error('Bad response from script'); }
+}
+async function pull(manual) {
+  if (!sheetOn()) { setSync('', 'Local mode — saved in this browser only'); return; }
+  if (isDirty()) { await pushNow(); return; }
+  setSync('warn', 'Syncing…');
+  try {
+    const d = await sheetGet('getAll');
+    if (d.error) throw new Error(d.error);
+    if (!Array.isArray(d.packages)) throw new Error('Apps Script is outdated — paste the new apps-script.gs and redeploy');
+    if (d.packages.length === 0 && d.parts.length === 0) {
+      lastSync = new Date().toLocaleTimeString('en-SG');
+      setSync('warn', 'Google Sheet is empty — Admin: click "Push to Sheet" to upload the current data');
+      if (manual) toast('Sheet is empty. Admin can push the current data.', 'info');
+      return;
+    }
+    DB = normalise(d); saveLocal();
+    lastSync = new Date().toLocaleTimeString('en-SG');
+    setSync('ok', 'Synced with Google Sheets');
+    renderAll(); if (manual) toast('Data refreshed from Google Sheets.');
+  } catch (e) { setSync('err', 'Sync failed: ' + e.message); if (manual) toast('Sync failed: ' + e.message, 'err'); }
+}
+function markDirty() {
+  ver++; saveLocal(); localStorage.setItem(LS_DIRTY, '1');
+  if (!sheetOn()) { setSync('', 'Saved in this browser only (no Sheet URL set)'); return; }
+  setSync('warn', 'Unsaved changes…');
+  clearTimeout(pushTimer); pushTimer = setTimeout(pushNow, 1200);
+}
+async function pushNow(manual) {
+  if (!sheetOn()) { toast('No Google Sheet URL configured.', 'err'); return; }
+  if (pushing) return;
+  clearTimeout(pushTimer); pushing = true;
+  const v = ver; setSync('warn', 'Saving to Google Sheets…');
+  try {
+    const d = await sheetPost({ action: 'saveAll', data: DB });
+    if (d.error) throw new Error(d.error);
+    lastSync = new Date().toLocaleTimeString('en-SG');
+    if (v === ver) { localStorage.removeItem(LS_DIRTY); setSync('ok', 'All changes saved to Google Sheets'); }
+    else { pushing = false; return pushNow(); }
+    if (manual) toast('Pushed to Google Sheets.');
+  } catch (e) { setSync('err', 'Save failed — will retry on next change (' + e.message + ')'); if (manual) toast('Save failed: ' + e.message, 'err'); }
+  pushing = false;
+}
+window.addEventListener('beforeunload', e => { if (isDirty() && sheetOn()) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ═══════════════ NO LOGIN: everyone can view and edit ═══════════════ */
+const ROLE = 'admin';
+function setView(v) {
+  if (v === 'admin' && ROLE !== 'admin') return;
+  $('viewInv').hidden = v !== 'inv'; $('viewAdmin').hidden = v !== 'admin';
+  $('navInv').classList.toggle('on', v === 'inv'); $('navAdmin').classList.toggle('on', v === 'admin');
+  renderAll(); window.scrollTo(0, 0);
+}
+
+/* ═══════════════ INVENTORY VIEW ═══════════════ */
+const F = { q: '', pkg: '', status: '' };
+const OPEN = new Set();
+
+function renderAll() { renderStats(); renderFilters(); renderPkgs(); if (ROLE === 'admin') renderAdmin(); $('updated').textContent = 'Live stock levels · ' + stamp(); }
+
+function renderStats() {
+  const low = DB.parts.filter(x => isLow(x.qty)).length;
+  $('stats').innerHTML = `
+    <button class="stat s-blue" data-act="stat" data-stat="items"><span class="ic">📦</span><div class="lb">Total Items</div><div class="vl">${DB.parts.length}</div><div class="sb">Drawing / part numbers</div><div class="go">View all items →</div></button>
+    <button class="stat s-green" data-act="stat" data-stat="stock"><span class="ic">🧮</span><div class="lb">Total Stocks</div><div class="vl">${sum(DB.parts)}</div><div class="sb">Pieces on hand</div><div class="go">View stock breakdown →</div></button>
+    <button class="stat s-purple" data-act="stat" data-stat="cats"><span class="ic">🗂</span><div class="lb">Categories</div><div class="vl">${DB.packages.length}</div><div class="sb">Packages</div><div class="go">View all packages →</div></button>
+    <button class="stat s-red" data-act="stat" data-stat="low"><span class="ic">⚠</span><div class="lb">Low Stock</div><div class="vl">${low}</div><div class="sb">Items with stock ≤ ${LOW}</div><div class="go">View low-stock items →</div></button>`;
+}
+function renderFilters() {
+  const cur = F.pkg;
+  $('fPkg').innerHTML = '<option value="">All packages</option>' + DB.packages.map(p => `<option value="${p.id}" ${p.id === cur ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
+}
+function renderPkgs() {
+  const q = F.q.trim().toLowerCase(), filt = !!(q || F.status || F.pkg), tf = !!(q || F.status);
+  let html = '';
+  DB.packages.forEach(p => {
+    if (F.pkg && F.pkg !== p.id) return;
+    const pm = q && p.name.toLowerCase().includes(q);
+    let subsHtml = '', shown = 0;
+    p.subs.forEach(s => {
+      const sm = pm || (q && s.name.toLowerCase().includes(q));
+      const list = partsOf(p.id, s.id).filter(x => {
+        if (F.status === 'low' && !isLow(x.qty)) return false;
+        if (F.status === 'ok' && isLow(x.qty)) return false;
+        if (!q || sm) return true;
+        return x.partNo.toLowerCase().includes(q) || x.remark.toLowerCase().includes(q);
+      });
+      if (tf && list.length === 0 && !(sm && !F.status)) return;
+      shown++;
+      subsHtml += `<div class="sub"><div class="sub-h"><span class="sub-name">${esc(s.name)}</span><span class="sub-tot">${sum(list)} pcs</span></div>
+        ${list.length ? `<table class="t"><thead><tr><th>Drawing / Part No.</th><th class="r">Stock</th><th>Status</th></tr></thead><tbody>
+        ${list.map(x => `<tr class="${isLow(x.qty) ? 'lowrow' : ''}"><td><div class="pn">${esc(x.partNo) || '—'}</div>${x.remark ? `<div class="rm">${esc(x.remark)}</div>` : ''}</td><td class="r"><span class="qty">${x.qty}</span></td><td>${badge(x.qty)}</td></tr>`).join('')}
+        </tbody></table>` : '<div class="noparts">No parts recorded</div>'}</div>`;
+    });
+    if (tf && shown === 0) return;
+    const all = partsInPkg(p.id), lows = all.filter(x => isLow(x.qty)).length, open = filt || OPEN.has(p.id);
+    html += `<div class="pkg ${open ? 'open' : ''}" id="pkg-${p.id}">
+      <div class="pkg-h" data-act="togglePkg" data-id="${p.id}"><span class="chev">▶</span><span class="pkg-name">${esc(p.name)}</span>
+        <div class="chips"><span class="chip">${p.subs.length} subcategories</span><span class="chip">${all.length} items</span><span class="chip blue">${sum(all)} pcs</span>${lows ? `<span class="chip red">⚠ ${lows} low</span>` : ''}</div></div>
+      <div class="pkg-b"><div class="subs">${subsHtml}</div></div></div>`;
+  });
+  $('pkgs').innerHTML = html || `<div class="empty pkg">${DB.packages.length ? 'No results match your search or filter.' : 'No packages yet.' + (ROLE === 'admin' ? ' Use the Admin Panel to add one.' : '')}</div>`;
+}
+$('q').addEventListener('input', e => { F.q = e.target.value; renderPkgs(); });
+$('fPkg').addEventListener('change', e => { F.pkg = e.target.value; renderPkgs(); });
+$('fStatus').addEventListener('change', e => { F.status = e.target.value; renderPkgs(); });
+
+/* ── stat detail popups ── */
+function openStat(type) {
+  let title = '', body = '';
+  const rowsOf = list => list.map(x => { const p = pkgById(x.pkg), s = p && p.subs.find(z => z.id === x.sub);
+    return `<tr><td>${esc(p?.name)}</td><td>${esc(s?.name)}</td><td class="pn">${esc(x.partNo) || '—'}</td><td class="r"><span class="qty">${x.qty}</span></td><td>${badge(x.qty)}</td></tr>`; }).join('');
+  const head = '<thead><tr><th>Package</th><th>Subcategory</th><th>Drawing / Part No.</th><th class="r">Stock</th><th>Status</th></tr></thead>';
+  if (type === 'items') {
+    title = `All Items (${DB.parts.length})`;
+    body = DB.parts.length ? `<table class="t">${head}<tbody>${rowsOf(DB.parts)}</tbody></table>` : '<div class="empty">No items yet.</div>';
+  } else if (type === 'low') {
+    const list = DB.parts.filter(x => isLow(x.qty)).sort((a, b) => a.qty - b.qty);
+    title = `Low Stock Items (${list.length}) — stock ≤ ${LOW}`;
+    body = list.length ? `<table class="t">${head}<tbody>${rowsOf(list)}</tbody></table>` : '<div class="okbig">✔ No low-stock items. Everything is above the minimum.</div>';
+  } else if (type === 'stock') {
+    title = `Stock Breakdown — ${sum(DB.parts)} pcs`;
+    body = '<table class="t"><thead><tr><th>Package</th><th>Subcategory</th><th class="r">Items</th><th class="r">Total stock</th></tr></thead><tbody>' +
+      DB.packages.map(p => p.subs.map((s, i) => { const l = partsOf(p.id, s.id);
+        return `<tr><td>${i === 0 ? `<b>${esc(p.name)}</b>` : ''}</td><td>${esc(s.name)}</td><td class="r">${l.length}</td><td class="r"><span class="qty">${sum(l)}</span></td></tr>`; }).join('') +
+        `<tr style="background:#f4f7fc"><td colspan="3" class="r"><b>${esc(p.name)} total</b></td><td class="r"><span class="qty">${sum(partsInPkg(p.id))}</span></td></tr>`).join('') + '</tbody></table>';
+  } else if (type === 'cats') {
+    title = `Categories (${DB.packages.length})`;
+    body = DB.packages.length ? '<p class="muted" style="margin-bottom:8px">Click a package to jump to it.</p><table class="t"><thead><tr><th>Package</th><th class="r">Subcategories</th><th class="r">Items</th><th class="r">Total stock</th><th class="r">Low</th></tr></thead><tbody>' +
+      DB.packages.map(p => { const a = partsInPkg(p.id); return `<tr class="clickrow" data-act="goPkg" data-id="${p.id}"><td><b>${esc(p.name)}</b></td><td class="r">${p.subs.length}</td><td class="r">${a.length}</td><td class="r"><span class="qty">${sum(a)}</span></td><td class="r">${a.filter(x => isLow(x.qty)).length}</td></tr>`; }).join('') + '</tbody></table>' : '<div class="empty">No packages yet.</div>';
+  }
+  openModal(`<div class="m-h"><h3>${title}</h3><button class="m-x" data-act="closeModal">✕</button></div><div class="m-b">${body}</div>
+    <div class="m-f"><button class="btn" data-act="closeModal">Close</button></div>`, true);
+}
+
+/* ═══════════════ EXPORT / PRINT ═══════════════ */
+function exportRows() {
+  const r = [['Package', 'Subcategory', 'Drawing / Part No.', 'Stock (pcs)', 'Status', 'Remark']];
+  DB.packages.forEach(p => p.subs.forEach(s => {
+    const l = partsOf(p.id, s.id);
+    if (!l.length) r.push([p.name, s.name, '', 0, '', '']);
+    l.forEach(x => r.push([p.name, s.name, x.partNo, x.qty, x.qty <= 0 ? 'Out of stock' : x.qty <= LOW ? 'Low stock' : 'In stock', x.remark]));
+  }));
+  return r;
+}
+function download(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+const fname = ext => `Mold_Die_Inventory_${new Date().toISOString().slice(0, 10)}.${ext}`;
+function exportCSV() {
+  const csv = exportRows().map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  download(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }), fname('csv')); toast('CSV downloaded.');
+}
+function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
+async function exportXLSX() {
+  try {
+    if (!window.XLSX) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(exportRows()); ws['!cols'] = [{ wch: 22 }, { wch: 22 }, { wch: 26 }, { wch: 12 }, { wch: 14 }, { wch: 30 }];
+    XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
+    const sm = [['Package', 'Subcategory', 'Items', 'Total stock (pcs)']];
+    DB.packages.forEach(p => p.subs.forEach(s => { const l = partsOf(p.id, s.id); sm.push([p.name, s.name, l.length, sum(l)]); }));
+    const ws2 = XLSX.utils.aoa_to_sheet(sm); ws2['!cols'] = [{ wch: 22 }, { wch: 22 }, { wch: 10 }, { wch: 18 }];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Summary');
+    XLSX.writeFile(wb, fname('xlsx')); toast('Excel file downloaded.');
+  } catch (e) {
+    const rows = exportRows(); // offline fallback: HTML table that Excel opens
+    const html = '<html><head><meta charset="utf-8"></head><body><table border="1">' + rows.map((r, i) => '<tr>' + r.map(c => `<${i ? 'td' : 'th'}>${esc(c)}</${i ? 'td' : 'th'}>`).join('') + '</tr>').join('') + '</table></body></html>';
+    download(new Blob([html], { type: 'application/vnd.ms-excel' }), fname('xls')); toast('Excel file downloaded (basic format).', 'info');
+  }
+}
+function doPrint() {
+  const low = DB.parts.filter(x => isLow(x.qty)).length;
+  let h = `<h1>Mold Die Inventory Report</h1><div class="meta">Generated ${stamp()} &nbsp;·&nbsp; ${DB.packages.length} packages &nbsp;·&nbsp; ${DB.parts.length} items &nbsp;·&nbsp; ${sum(DB.parts)} pcs in stock &nbsp;·&nbsp; ${low} low-stock items (≤ ${LOW})</div>`;
+  DB.packages.forEach(p => {
+    h += `<h2>${esc(p.name)} <span style="font-weight:400;font-size:10pt"> — ${sum(partsInPkg(p.id))} pcs</span></h2>`;
+    p.subs.forEach(s => {
+      const l = partsOf(p.id, s.id);
+      h += `<h3>${esc(s.name)} — ${sum(l)} pcs</h3>`;
+      h += l.length ? `<table><thead><tr><th style="width:42%">Drawing / Part No.</th><th class="r" style="width:12%">Stock</th><th style="width:16%">Status</th><th>Remark</th></tr></thead><tbody>` +
+        l.map(x => `<tr class="${x.qty <= 0 ? 'out' : x.qty <= LOW ? 'low' : ''}"><td>${esc(x.partNo)}</td><td class="r">${x.qty}</td><td>${x.qty <= 0 ? 'Out of stock' : x.qty <= LOW ? 'Low stock' : 'In stock'}</td><td>${esc(x.remark)}</td></tr>`).join('') + '</tbody></table>' : '<p style="color:#777;font-size:9.5pt">No parts recorded</p>';
+    });
+  });
+  $('printArea').innerHTML = h; setTimeout(() => window.print(), 60);
+}
+
+/* ═══════════════ MODAL / FORMS ═══════════════ */
+function openModal(html, wide) { $('modal').className = 'modal' + (wide ? ' wide' : ''); $('modal').innerHTML = html; $('overlay').classList.add('open'); }
+function closeModal() { $('overlay').classList.remove('open'); }
+$('overlay').addEventListener('mousedown', e => { if (e.target === $('overlay')) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+function openForm({ title, fields = [], message = '', okLabel = 'Save', danger = false, onOk }) {
+  const f = fields.map((x, i) => x.type === 'checkbox'
+    ? `<div class="field"><label class="chk"><input type="checkbox" name="${x.key}" ${x.value ? 'checked' : ''}> ${esc(x.label)}</label></div>`
+    : `<div class="field"><label for="mf${i}">${esc(x.label)}</label><input class="in ${x.mono ? 'mono' : ''}" id="mf${i}" name="${x.key}" type="${x.type || 'text'}" ${x.type === 'number' ? 'min="0"' : ''} value="${esc(x.value ?? '')}" placeholder="${esc(x.placeholder || '')}" autocomplete="off"></div>`).join('');
+  openModal(`<div class="m-h"><h3 style="${danger ? 'color:var(--bad)' : ''}">${esc(title)}</h3><button class="m-x" data-act="closeModal">✕</button></div>
+    <div class="m-b"><form id="mf">${message ? `<p style="margin-bottom:14px;color:var(--ink2)">${message}</p>` : ''}${f}<div class="m-err" id="mErr"></div></form></div>
+    <div class="m-f"><button class="btn" data-act="closeModal">Cancel</button><button class="btn ${danger ? 'danger' : 'primary'}" type="submit" form="mf">${esc(okLabel)}</button></div>`);
+  const form = $('mf');
+  form.addEventListener('submit', e => {
+    e.preventDefault(); const v = {};
+    fields.forEach(x => { const el = form.elements[x.key]; v[x.key] = x.type === 'checkbox' ? el.checked : (x.type === 'number' ? num(el.value) : el.value.trim()); });
+    for (const x of fields) if (x.required && !v[x.key] && v[x.key] !== 0) { $('mErr').textContent = x.label + ' is required.'; return; }
+    const r = onOk(v); if (typeof r === 'string') { $('mErr').textContent = r; return; } closeModal();
+  });
+  const first = form.querySelector('input:not([type=checkbox])'); if (first) { first.focus(); first.select(); }
+}
+
+/* ═══════════════ ADMIN PANEL ═══════════════ */
+const A = { pkg: null };
+
+function commit(render = true) { markDirty(); if (render) renderAll(); else { renderStats(); refreshAdmin(); } }
+
+function renderAdmin() {
+  if (!pkgById(A.pkg)) A.pkg = DB.packages[0]?.id || null;
+  $('sideCount').textContent = DB.packages.length + ' total';
+  $('sideList').innerHTML = DB.packages.map(p => `<button class="side-item ${p.id === A.pkg ? 'on' : ''}" data-act="selPkg" data-id="${p.id}"><b>${esc(p.name)}</b><span data-sb="${p.id}">${partsInPkg(p.id).length} items · ${sum(partsInPkg(p.id))} pcs</span></button>`).join('') || '<div class="empty">No packages</div>';
+  const p = pkgById(A.pkg);
+  if (!p) { $('aMain').innerHTML = '<div class="empty a-sub" style="padding:50px">No packages yet.<br><br><button class="btn primary" data-act="addPkg">+ Add your first package</button></div>'; return; }
+  $('aMain').innerHTML = `
+    <div class="a-head"><div><h2>${esc(p.name)}</h2><div class="muted" id="aSum"></div></div>
+      <div class="btn-row"><button class="btn" data-act="addSub">+ Add Subcategory</button><button class="btn" data-act="renamePkg">✏ Rename Package</button><button class="btn danger" data-act="delPkg">🗑 Delete Package</button></div></div>
+    <div class="hint">Edit the part number or remark directly in the table. To change stock, click <b>− Use</b> when you take parts out or <b>+ Receive</b> when new stock arrives. Everything saves automatically. Stock ≤ ${LOW} is flagged as low.</div>
+    ${p.subs.map(s => { const l = partsOf(p.id, s.id); return `
+    <div class="a-sub" data-sub="${s.id}">
+      <div class="a-sub-h"><div><span class="n">${esc(s.name)}</span><span class="tt" data-subtot="${s.id}">${sum(l)} pcs</span></div>
+        <div class="btn-row"><button class="btn xs primary" data-act="addPart" data-id="${s.id}">+ Add Part</button><button class="btn xs" data-act="renameSub" data-id="${s.id}">✏ Rename</button><button class="btn xs danger" data-act="delSub" data-id="${s.id}">🗑 Delete</button></div></div>
+      ${l.length ? `<table class="t"><thead><tr><th style="width:34%">Drawing / Part No.</th><th style="width:250px">Stock</th><th>Remark</th><th style="width:120px">Status</th><th style="width:50px"></th></tr></thead><tbody>
+      ${l.map(x => `<tr data-part="${x.id}"><td><input class="in mono" data-f="partNo" value="${esc(x.partNo)}" placeholder="Drawing / part number"></td>
+        <td><div class="stk"><span class="qty">${x.qty}</span><button class="btn xs use" data-act="use">− Use</button><button class="btn xs recv" data-act="recv">+ Receive</button></div></td>
+        <td><input class="in" data-f="remark" value="${esc(x.remark)}" placeholder="Optional note"></td><td class="st">${badge(x.qty)}</td>
+        <td><button class="btn xs danger" data-act="delPart" title="Delete part">✕</button></td></tr>`).join('')}</tbody></table>` : '<div class="noparts">No parts yet — click “+ Add Part”.</div>'}
+    </div>`; }).join('') || '<div class="empty a-sub">No subcategories. Click “+ Add Subcategory”.</div>'}`;
+  refreshAdmin();
+}
+function refreshAdmin() {
+  const p = pkgById(A.pkg); if (!p) return;
+  document.querySelectorAll('#aMain tr[data-part]').forEach(tr => { const x = DB.parts.find(z => z.id === tr.dataset.part); if (x) tr.querySelector('.st').innerHTML = badge(x.qty); });
+  p.subs.forEach(s => { const el = document.querySelector(`[data-subtot="${s.id}"]`); if (el) el.textContent = sum(partsOf(p.id, s.id)) + ' pcs'; });
+  DB.packages.forEach(k => { const el = document.querySelector(`[data-sb="${k.id}"]`); if (el) el.textContent = `${partsInPkg(k.id).length} items · ${sum(partsInPkg(k.id))} pcs`; });
+  const a = partsInPkg(p.id), s = $('aSum'); if (s) s.textContent = `${p.subs.length} subcategories · ${a.length} items · ${sum(a)} pcs · ${a.filter(x => isLow(x.qty)).length} low stock`;
+}
+function setQty(id, val) {
+  const x = DB.parts.find(z => z.id === id); if (!x) return; x.qty = num(val);
+  const inp = document.querySelector(`tr[data-part="${id}"] [data-f=qty]`); if (inp) inp.value = x.qty;
+  commit(false);
+}
+/* Use / Receive stock dialog */
+function openAdjust(partId, dir) {
+  const x = DB.parts.find(z => z.id === partId); if (!x) return;
+  const use = dir < 0;
+  openModal(`<div class="m-h"><h3>${use ? '− Use stock' : '+ Receive stock'}</h3><button class="m-x" data-act="closeModal">✕</button></div>
+    <div class="m-b"><form id="af" autocomplete="off">
+      <p><b class="mono">${esc(x.partNo)}</b></p>
+      <p class="muted">Current stock: <b>${x.qty}</b> pcs</p>
+      <div class="field" style="margin-top:12px"><label for="aq">Quantity ${use ? 'used' : 'received'} (pcs)</label>
+        <input class="in mono" id="aq" type="number" min="1" step="1" inputmode="numeric"></div>
+      <div class="adj-prev" id="aPrev">Enter a quantity</div>
+      <div class="m-err" id="mErr"></div></form></div>
+    <div class="m-f"><button class="btn" data-act="closeModal">Cancel</button><button class="btn ${use ? 'danger' : 'primary'}" type="submit" form="af">Save</button></div>`);
+  const inp = $('aq'); inp.focus();
+  inp.addEventListener('input', () => {
+    const q = parseInt(inp.value, 10), p = $('aPrev'); $('mErr').textContent = '';
+    if (!(q > 0)) { p.className = 'adj-prev'; p.textContent = 'Enter a quantity'; return; }
+    const next = x.qty + dir * q;
+    if (next < 0) { p.className = 'adj-prev out'; p.textContent = 'Not enough stock (only ' + x.qty + ' pcs left)'; return; }
+    const st = next <= 0 ? ['out', 'Out of stock'] : next <= LOW ? ['low', 'Low stock'] : ['ok', 'In stock'];
+    p.className = 'adj-prev ' + st[0]; p.textContent = 'New stock: ' + next + ' pcs → ' + st[1];
+  });
+  $('af').addEventListener('submit', e => {
+    e.preventDefault();
+    const q = parseInt(inp.value, 10);
+    if (!(q > 0)) { $('mErr').textContent = 'Enter a quantity greater than 0.'; return; }
+    const next = x.qty + dir * q;
+    if (next < 0) { $('mErr').textContent = 'Not enough stock. Only ' + x.qty + ' pcs left.'; return; }
+    x.qty = next; closeModal(); commit();
+    toast((use ? 'Deducted ' : 'Added ') + q + ' pcs · ' + x.partNo);
+  });
+}
+// inline edits
+document.addEventListener('change', e => {
+  const el = e.target, tr = el.closest('tr[data-part]'); if (!tr || !el.dataset.f) return;
+  const x = DB.parts.find(z => z.id === tr.dataset.part); if (!x) return;
+  if (el.dataset.f === 'qty') return setQty(x.id, el.value);
+  if (el.dataset.f === 'partNo') {
+    const v = el.value.trim();
+    if (!v) { el.value = x.partNo; return toast('Part number cannot be empty.', 'err'); }
+    if (DB.parts.some(z => z.id !== x.id && z.pkg === x.pkg && z.sub === x.sub && z.partNo.toLowerCase() === v.toLowerCase())) { el.value = x.partNo; return toast('That part number already exists in this subcategory.', 'err'); }
+    x.partNo = v;
+  } else x.remark = el.value.trim();
+  commit(false);
+});
+
+/* ═══════════════ CLICK ROUTER ═══════════════ */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act]'); if (!t) return;
+  const a = t.dataset.act, id = t.dataset.id, tr = t.closest('tr[data-part]'), pid = tr?.dataset.part;
+  const p = pkgById(A.pkg);
+  switch (a) {
+    case 'view': setView(t.dataset.v); break;
+    case 'sync': pull(true); break;
+    case 'pushNow': pushNow(true); break;
+    case 'print': doPrint(); break;
+    case 'csv': exportCSV(); break;
+    case 'xlsx': exportXLSX(); break;
+    case 'stat': openStat(t.dataset.stat); break;
+    case 'closeModal': closeModal(); break;
+    case 'togglePkg': OPEN.has(id) ? OPEN.delete(id) : OPEN.add(id); renderPkgs(); break;
+    case 'expandAll': DB.packages.forEach(k => OPEN.add(k.id)); renderPkgs(); break;
+    case 'collapseAll': OPEN.clear(); renderPkgs(); break;
+    case 'goPkg':
+      closeModal(); F.q = ''; F.pkg = ''; F.status = ''; $('q').value = ''; $('fStatus').value = ''; OPEN.add(id); renderFilters(); renderPkgs();
+      document.getElementById('pkg-' + id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
+
+    case 'selPkg': A.pkg = id; renderAdmin(); break;
+    case 'use': case 'recv': openAdjust(pid, a === 'use' ? -1 : 1); break;
+    case 'delPart': {
+      const x = DB.parts.find(z => z.id === pid); if (!x) break;
+      openForm({ title: 'Delete Part', danger: true, okLabel: 'Delete', message: `Delete part <b>${esc(x.partNo)}</b> (stock ${x.qty})? This cannot be undone.`, onOk() { DB.parts = DB.parts.filter(z => z.id !== pid); commit(); toast('Part deleted.'); } }); break;
+    }
+    case 'addPkg':
+      openForm({ title: 'Add Package', okLabel: 'Add Package', fields: [
+        { key: 'name', label: 'Package name', placeholder: 'e.g. S8/GN16 Cu', required: true },
+        { key: 'subs', type: 'checkbox', label: 'Create the 4 standard subcategories (Top/Bottom Cavity Bar, Top/Bottom Cull Block)', value: true }],
+        onOk(v) {
+          if (DB.packages.some(k => k.name.toLowerCase() === v.name.toLowerCase())) return 'A package with this name already exists.';
+          const k = { id: uid(), name: v.name, subs: v.subs ? DEFAULT_SUBS.map(n => ({ id: uid(), name: n })) : [] };
+          DB.packages.push(k); DB.packages.sort(byName); A.pkg = k.id; commit(); toast(`Package "${v.name}" added.`);
+        } }); break;
+    case 'renamePkg':
+      openForm({ title: 'Rename Package', fields: [{ key: 'name', label: 'Package name', value: p.name, required: true }], onOk(v) {
+        if (DB.packages.some(k => k.id !== p.id && k.name.toLowerCase() === v.name.toLowerCase())) return 'A package with this name already exists.';
+        p.name = v.name; DB.packages.sort(byName); commit(); toast('Package renamed.'); } }); break;
+    case 'delPkg': {
+      const n = partsInPkg(p.id).length;
+      openForm({ title: 'Delete Package', danger: true, okLabel: 'Delete Package', message: `Delete <b>${esc(p.name)}</b> and its ${p.subs.length} subcategories${n ? ` including <b>${n} part(s)</b>` : ''}? This cannot be undone.`,
+        onOk() { DB.parts = DB.parts.filter(x => x.pkg !== p.id); DB.packages = DB.packages.filter(k => k.id !== p.id); A.pkg = null; commit(); toast('Package deleted.'); } }); break;
+    }
+    case 'addSub':
+      openForm({ title: 'Add Subcategory', fields: [{ key: 'name', label: 'Subcategory name', placeholder: 'e.g. TOP CAVITY BAR', required: true }], onOk(v) {
+        const name = v.name.toUpperCase(); if (p.subs.some(s => s.name.toLowerCase() === name.toLowerCase())) return 'This subcategory already exists in the package.';
+        p.subs.push({ id: uid(), name }); commit(); toast('Subcategory added.'); } }); break;
+    case 'renameSub': {
+      const s = p.subs.find(z => z.id === id);
+      openForm({ title: 'Rename Subcategory', fields: [{ key: 'name', label: 'Subcategory name', value: s.name, required: true }], onOk(v) {
+        const name = v.name.toUpperCase(); if (p.subs.some(z => z.id !== s.id && z.name.toLowerCase() === name.toLowerCase())) return 'This subcategory already exists in the package.';
+        s.name = name; commit(); toast('Subcategory renamed.'); } }); break;
+    }
+    case 'delSub': {
+      const s = p.subs.find(z => z.id === id), n = partsOf(p.id, id).length;
+      openForm({ title: 'Delete Subcategory', danger: true, okLabel: 'Delete', message: `Delete <b>${esc(s.name)}</b>${n ? ` and its <b>${n} part(s)</b>` : ''}? This cannot be undone.`,
+        onOk() { DB.parts = DB.parts.filter(x => !(x.pkg === p.id && x.sub === id)); p.subs = p.subs.filter(z => z.id !== id); commit(); toast('Subcategory deleted.'); } }); break;
+    }
+    case 'addPart': {
+      const s = p.subs.find(z => z.id === id);
+      openForm({ title: `Add Part — ${s.name}`, okLabel: 'Add Part', fields: [
+        { key: 'partNo', label: 'Drawing / Part number', placeholder: 'e.g. DWG-S8-TCB-001', mono: true, required: true },
+        { key: 'qty', label: 'Stock quantity (pcs)', type: 'number', value: 0 },
+        { key: 'remark', label: 'Remark (optional)' }], onOk(v) {
+          if (partsOf(p.id, id).some(z => z.partNo.toLowerCase() === v.partNo.toLowerCase())) return 'This part number already exists in the subcategory.';
+          DB.parts.push({ id: uid(), pkg: p.id, sub: id, partNo: v.partNo, qty: v.qty, remark: v.remark }); commit(); toast('Part added.'); } }); break;
+    }
+  }
+});
+
+/* ═══════════════ INIT ═══════════════ */
+loadLocal();
+setSync('', sheetOn() ? 'Ready to sync' : 'Local mode');
+setView('inv'); renderAll(); pull();
+</script>
+</body>
+</html>
